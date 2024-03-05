@@ -1,0 +1,21 @@
+{
+  "name": "@4537-lab-5/api",
+  "type": "module",
+  "private": true,
+  "version": "0.0.0",
+  "author": "Ben Chiang <bchiang10@my.bcit.ca>",
+  "dependencies": {
+    "mysql2": "^3.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.14",
+    "bun": "^1.0.29",
+    "typescript": "^5.3.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "bun src/index.ts",
+    "start:dev": "bun --watch src/index.ts",
+    "lint": "eslint --ext ts src/ && tsc --noEmit -p tsconfig.json"
+  }
+}

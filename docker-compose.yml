@@ -1,0 +1,65 @@
+# ========================== VARIABLES ==========================
+x-api-args: &api-args
+  NAME: api
+  DOCKER_BUN_VERSION: 1.0.30-slim
+  DOCKER_NODE_VERSION: 20.11.1-slim
+  DOCKER_UBUNTU_VERSION: jammy-20230624
+
+
+services:
+# ========================== DEVELOPMENT ==========================
+  api-dev:
+    build:
+      dockerfile: ./docker/Dockerfile.backend
+      target: development
+      args: *api-args
+    env_file:
+      - ./apps/api/.env
+    environment:
+      DATABASE_HOST: mysql-resource
+      DATABASE_PORT: 3306
+      DATABASE_USER: root
+      DATABASE_PASSWORD: dev
+      DATABASE_NAME: Lab5
+    ports:
+      - ${API_PORT:-3000}:${API_PORT:-3000}
+    restart: unless-stopped
+    volumes:
+      - ./apps/api:/app/api:ro
+    depends_on:
+      mysql-resource:
+        condition: service_healthy
+
+  mysql-resource:
+    image: mysql:8.3.0
+    environment:
+      MYSQL_ROOT_PASSWORD: dev
+    volumes:
+      # This volume is pretty redundant, but if the database crashed
+      # during dev, it'll be nice not to lose the data you were working
+      # with.
+      - mysql-resource-ephemeral:/var/lib/mysql
+      - ./docker/mysql/initdb:/docker-entrypoint-initdb.d
+    ports:
+     - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  phpmyadmin-resource:
+    image: phpmyadmin:5.2.1
+    environment:
+      PMA_USER: root
+      PMA_PASSWORD: dev
+    links:
+      - mysql-resource:db
+    ports:
+      - 3307:80
+    depends_on:
+      mysql-resource:
+        condition: service_healthy
+
+volumes:
+  mysql-resource-ephemeral: {}

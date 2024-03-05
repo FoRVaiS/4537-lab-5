@@ -1,0 +1,85 @@
+# Global Arguments
+ARG NAME
+ARG WORKSPACE=/app
+
+ARG USER=node
+
+ARG DOCKER_NODE_VERSION=latest
+ARG DOCKER_BUN_VERSION=latest
+ARG DOCKER_UBUNTU_VERSION=latest
+
+# ========================== NODE STAGE ==========================
+FROM node:${DOCKER_NODE_VERSION} AS node
+
+
+# ========================== BASE STAGE ==========================
+FROM ubuntu:${DOCKER_UBUNTU_VERSION} AS base
+ARG NAME
+ARG WORKSPACE
+ARG USER
+
+RUN apt-get update \
+    && apt-get -qq install -y --no-install-recommends \
+    # Install Tini for signal handling
+    tini
+
+# Copy Node/NPM binaries and libraries
+COPY --from=node /usr/local/include/ /usr/local/include/
+COPY --from=node /usr/local/lib/ /usr/local/lib/
+COPY --from=node /usr/local/bin/ /usr/local/bin/
+
+# Create user and workspace
+RUN groupadd --gid 1000 ${USER} \
+    && useradd --uid 1000 --gid ${USER} --shell /bin/bash --create-home ${USER} \
+    && mkdir ${WORKSPACE} \
+    && chown -R ${USER}:${USER} ${WORKSPACE}
+
+USER ${USER}
+WORKDIR ${WORKSPACE}
+
+# Install production dependencies
+COPY --chown=${USER}:${USER} ./apps/${NAME}/package.json ./
+COPY --chown=${USER}:${USER} ./package-lock.json ./
+RUN npm install --omit=dev
+
+
+# ========================== DEVELOPMENT STAGE ==========================
+FROM base AS development
+ARG NAME
+
+ENV NODE_ENV=development
+
+# Install all dependencies
+RUN npm install && npm cache clean --force
+
+# Copy source code for cases where the image is run outside of a docker-compose environment
+WORKDIR ${WORKSPACE}/${NAME}
+COPY --chown=${USER}:${USER} ./apps/${NAME} .
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["npm", "run", "start:dev"]
+
+
+# ========================== PRODUCTION STAGE ==========================
+FROM oven/bun:${DOCKER_BUN_VERSION} AS production
+ARG NAME
+
+ARG WORKSPACE
+WORKDIR ${WORKSPACE}
+
+ENV NODE_ENV=production
+
+# Copy Tini
+COPY --from=base /usr/bin/tini /usr/bin/tini
+
+# Copy source code
+COPY --chown=${USER}:${USER} ./apps/${NAME}/drizzle ${WORKSPACE}/${NAME}/drizzle
+COPY --chown=${USER}:${USER} ./apps/${NAME}/src ${WORKSPACE}/${NAME}/src
+COPY --chown=${USER}:${USER} ./apps/${NAME}/tsconfig.json ${WORKSPACE}/${NAME}/tsconfig.json
+
+# Copy production dependencies
+COPY --from=base --chown=${USER}:${USER} ${WORKSPACE}/node_modules ${WORKSPACE}/node_modules
+
+WORKDIR ${WORKSPACE}/${NAME}
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["bun", "./src/index.ts"]
