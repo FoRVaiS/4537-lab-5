@@ -53,6 +53,7 @@ export class Server {
     });
 
     /* ======== ROUTES ======== */
+    this.#routes.GET['/health'] = (_, res) => this.#sendResponse(res, 200, 'OK!');
     this.#routes.GET['/comp4537/lab5/api/v1/query/:query'] = async (req, res) => {
       const query = decodeURI(req.params.query as string);
 
