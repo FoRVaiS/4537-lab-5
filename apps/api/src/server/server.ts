@@ -20,6 +20,8 @@ export type ResponseBody = {
   err?: Error
 }
 
+const PERMITTED_HOSTS = process.env.PERMITTED_HOSTS || '*';
+
 export class Server {
   #server: ReturnType<typeof http.createServer>;
   #routes: Record<HTTP_METHODS, Record<string, Middleware>> = {
@@ -119,6 +121,7 @@ export class Server {
     };
 
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', PERMITTED_HOSTS);
     res.statusCode = code;
     res.write(JSON.stringify(responseBody));
     res.end();
