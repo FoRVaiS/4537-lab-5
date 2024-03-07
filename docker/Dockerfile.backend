@@ -73,7 +73,6 @@ ENV NODE_ENV=production
 COPY --from=base /usr/bin/tini /usr/bin/tini
 
 # Copy source code
-COPY --chown=${USER}:${USER} ./apps/${NAME}/drizzle ${WORKSPACE}/${NAME}/drizzle
 COPY --chown=${USER}:${USER} ./apps/${NAME}/src ${WORKSPACE}/${NAME}/src
 COPY --chown=${USER}:${USER} ./apps/${NAME}/tsconfig.json ${WORKSPACE}/${NAME}/tsconfig.json
 
