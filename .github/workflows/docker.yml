@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  PREFIX: 4537-lab-5
+  PREFIX: 4537-lab-5-
 
 jobs:
   set-globals:
