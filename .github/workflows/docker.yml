@@ -61,7 +61,7 @@ jobs:
         id: project
         uses: ./.github/actions/build-project
         with:
-          name: ${{ matrix.project }}
+          name: 4537-lab-5-${{ matrix.project }}
           project: ${{ matrix.project }}
           registry: ${{ env.REGISTRY }}
           namespace: ${{ env.OWNER_LC }}
