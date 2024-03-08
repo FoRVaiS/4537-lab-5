@@ -9,6 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  PREFIX: 4537-lab-5
 
 jobs:
   set-globals:
@@ -61,7 +62,7 @@ jobs:
         id: project
         uses: ./.github/actions/build-project
         with:
-          name: 4537-lab-5-${{ matrix.project }}
+          name: ${{ env.PREFIX }}${{ matrix.project }}
           project: ${{ matrix.project }}
           registry: ${{ env.REGISTRY }}
           namespace: ${{ env.OWNER_LC }}
@@ -113,7 +114,7 @@ jobs:
 
       - name: Push image to ghcr.io
         env:
-          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ matrix.project }}:${{ env.VERSION }}
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.PREFIX }}${{ matrix.project }}:${{ env.VERSION }}
         run: |
           docker push ${{ env.image }}
 
