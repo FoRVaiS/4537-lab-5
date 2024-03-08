@@ -1,0 +1,45 @@
+name: Build project image
+
+inputs:
+  name:
+    type: string
+    required: true
+  project:
+    type: string
+    required: true
+  registry:
+    type: string
+    default: ghcr.io
+  namespace:
+    type: string
+    default: ${{ github.repository_owner }}
+  dockerfile:
+    type: string
+    default: Dockerfile
+  tag:
+    type: string
+    default: latest
+
+outputs:
+  image:
+    value: ${{ inputs.registry }}/${{ inputs.namespace }}/${{ inputs.name }}:${{ inputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+    - uses: docker/setup-buildx-action@v2
+
+    - uses: docker/build-push-action@v5.1.0
+      env:
+        image: ${{ inputs.registry }}/${{ inputs.namespace }}/${{ inputs.name }}:${{ inputs.tag }}
+      with:
+        context: .
+        file: ${{ inputs.dockerfile }}
+        build-args: |
+          NAME=${{ inputs.project }}
+        target: production
+        tags: ${{ env.image }}
+        outputs: type=docker,dest=/tmp/${{ inputs.name }}.tar
+        cache-from: type=gha, scope=${{ github.workflow }}
+        cache-to: type=gha, scope=${{ github.workflow }}

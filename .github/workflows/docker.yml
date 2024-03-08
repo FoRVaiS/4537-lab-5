@@ -1,0 +1,133 @@
+---
+name: Docker
+
+on:
+  push: # Canary builds
+    branches: [ main ]
+  release: # Production builds
+    types: [ published ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  set-globals:
+    name: globals
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Transform GitHub Repository Owner to lower-case
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "${OWNER,,}"
+          echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+
+      - name: Inject version from tag into ENV
+        id: release-tag
+        run: |
+          version=$(echo ${{ github.event.release.name || 'release-latest' }} | cut -d- -f2)
+          echo "$version"
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+    outputs:
+      OWNER_LC: ${{ env.OWNER_LC }}
+      VERSION: ${{ env.VERSION }}
+
+  build:
+    name: build-${{ matrix.project }}
+    runs-on: ubuntu-latest
+    needs:
+      - set-globals
+
+    strategy:
+      matrix:
+        include:
+          - project: api
+            dockerfile: Dockerfile.backend
+
+    env:
+      OWNER_LC: ${{ needs.set-globals.outputs.OWNER_LC }}
+      VERSION: ${{ needs.set-globals.outputs.VERSION }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        id: project
+        uses: ./.github/actions/build-project
+        with:
+          name: ${{ matrix.project }}
+          project: ${{ matrix.project }}
+          registry: ${{ env.REGISTRY }}
+          namespace: ${{ env.OWNER_LC }}
+          dockerfile: ./docker/${{ matrix.dockerfile }}
+          tag: ${{ env.VERSION }}
+
+      - name: Upload docker artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: docker
+          path: /tmp/${{ matrix.project }}.tar
+
+  push:
+    name: push-${{ matrix.project }}
+    runs-on: ubuntu-latest
+    needs:
+      - set-globals
+      - build
+
+    strategy:
+      matrix:
+        project: [api]
+
+    env:
+      OWNER_LC: ${{ needs.set-globals.outputs.OWNER_LC }}
+      VERSION: ${{ needs.set-globals.outputs.VERSION }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download docker artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: docker
+          path: /tmp
+
+      - name: Load docker image
+        run: |
+          docker load --input /tmp/${{ matrix.project }}.tar
+          docker image ls -a
+
+      - uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to ghcr.io
+        env:
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ matrix.project }}:${{ env.VERSION }}
+        run: |
+          docker push ${{ env.image }}
+
+  cleanup:
+    name: cleanup
+    needs:
+      - set-globals
+      - build
+      - push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Remove artifacts
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: |
+            docker
