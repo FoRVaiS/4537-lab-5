@@ -2,7 +2,7 @@
   "name": "@4537-lab-5/api",
   "type": "module",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.1",
   "author": "Ben Chiang <bchiang10@my.bcit.ca>",
   "dependencies": {
     "mysql2": "^3.9.1"

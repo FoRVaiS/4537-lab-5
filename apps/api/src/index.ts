@@ -43,5 +43,6 @@ if (!process.env.API_PORT) logger.warn('No API_PORT environment variable detecte
 const server = new Server(reader, writer);
 
 server.start(HOST, PORT, () => {
+  logger.info('Lab-5 API: v1.0.1');
   logger.info(`Server started on http://${HOST}:${PORT}/`);
 });
