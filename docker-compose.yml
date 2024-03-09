@@ -1,12 +1,18 @@
 # ========================== VARIABLES ==========================
 x-api-args: &api-args
   NAME: api
-  DOCKER_BUN_VERSION: 1.0.30-slim
   DOCKER_NODE_VERSION: 20.11.1-slim
   DOCKER_UBUNTU_VERSION: jammy-20230624
 
 
 services:
+# ========================== PRODUCTION ==========================
+  api-prod:
+    build:
+      dockerfile: ./docker/Dockerfile.backend
+      target: production
+      args: *api-args
+
 # ========================== DEVELOPMENT ==========================
   api-dev:
     build:
