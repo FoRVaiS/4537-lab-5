@@ -4,6 +4,8 @@ import mysql from 'mysql2/promise';
 import { Server } from './server/server.js';
 import { logger } from './modules/logger.js';
 
+import { version } from '../package.json';
+
 /* ====== DATABASE ====== */
 const DATABASE_HOST = process.env.DATABASE_HOST;
 const DATABASE_PORT = parseInt(process.env.DATABASE_PORT || '3306', 10);
@@ -43,6 +45,6 @@ if (!process.env.API_PORT) logger.warn('No API_PORT environment variable detecte
 const server = new Server(reader, writer);
 
 server.start(HOST, PORT, () => {
-  logger.info('Lab-5 API: v1.0.1');
+  logger.info(`Lab-5 API: v${version}`);
   logger.info(`Server started on http://${HOST}:${PORT}/`);
 });
