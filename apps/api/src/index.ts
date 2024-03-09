@@ -30,8 +30,8 @@ await rootClient.query(`
 `);
 rootClient.end();
 
-const readerClient = await mysql.createConnection(connectionStringReader);
-const writerClient = await mysql.createConnection(connectionStringWriter);
+const reader = mysql.createPool(connectionStringReader);
+const writer = mysql.createPool(connectionStringWriter);
 
 /* ====== SERVER ====== */
 const HOST: string = process.env.API_HOST || '0.0.0.0';
@@ -40,7 +40,7 @@ const PORT: number = parseInt(process.env.API_PORT || '3000', 10);
 if (!process.env.API_HOST) logger.warn('No API_HOST environment variable detected. Defaulting to 0.0.0.0');
 if (!process.env.API_PORT) logger.warn('No API_PORT environment variable detected. Defaulting to 3000');
 
-const server = new Server(readerClient, writerClient);
+const server = new Server(reader, writer);
 
 server.start(HOST, PORT, () => {
   logger.info(`Server started on http://${HOST}:${PORT}/`);

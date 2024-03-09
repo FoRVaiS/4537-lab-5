@@ -29,7 +29,7 @@ export class Server {
     'POST': {},
   };
 
-  constructor(readerClient: mysql.Connection, writerClient: mysql.Connection) {
+  constructor(readerClient: mysql.Pool, writerClient: mysql.Pool) {
     /* ======== SERVER INIT ======== */
     this.#server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
       const method = req.method!.toUpperCase() as HTTP_METHODS;
