@@ -65,7 +65,7 @@ WORKDIR ${WORKSPACE}/${NAME}
 COPY --chown=${USER}:${USER} ./apps/${NAME} .
 COPY --from=development --chown=${USER}:${USER} ${WORKSPACE}/node_modules/ ${WORKSPACE}/node_modules/
 RUN rm -rf build/ \
-    && npx tsc -p tsconfig.json \
+    && npm run build \
     && rm -rf ${WORKSPACE}/node_modules/
 
 
